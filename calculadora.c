@@ -210,6 +210,8 @@ double applyOperator(double operand1, char operator, double operand2) {
             }
         case '^':
             return pow(operand1, operand2);
+        case 'r':
+            return sqrt(operand1);
         default:
             printf("Erro: operador inválido.\n");
             exit(1);
