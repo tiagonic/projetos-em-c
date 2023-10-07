@@ -49,7 +49,7 @@ void printStack(Stack *_stack) {
         if(_stack->caractere!='\0') {
             printf("%c", _stack->caractere);
         } else {
-            printf("%.2f", _stack->valor);
+            printf("%f", _stack->valor);
         }
         printStack(_stack->ant);
     } else {
@@ -62,7 +62,6 @@ void printNode(Stack *_stack) {
         printf("valor = %.2f\n", _stack->valor);
         printf("caractere = %c\n", _stack->caractere);
         printf("lock = %d\n", _stack->lock);
-        printStackSize(_stack);
     }
     printf("\n");
 }
@@ -101,7 +100,7 @@ int isOperator(char c) {
 }
 
 int isDelimiter(char c) {
-    return (c == '(' || c == ')');
+    return (c == '(' || c == ',' || c == ')');
 }
 
 Stack * empilhar(Stack *_stack, char *expression, char *fim, int i) {
@@ -114,8 +113,12 @@ Stack * empilhar(Stack *_stack, char *expression, char *fim, int i) {
             _stack = push(_stack, 0, expression[i]);
             i++;
         } else {
+            printf("\nErro: caractere inválido na expressão.\nexpression[%d]='%c'\n\n", i, expression[i]);
+            printf("Tamanho da pilha: %d\n\n", getStackSize(_stack));
+            printf("Nó da pilha:\n");
+            printNode(_stack);
+            printf("Todos os elementos da pilha:\n");
             printStack(_stack);
-            printf("Erro: caractere inválido na expressão.\n");
             exit(1);
         }
         _stack = empilhar(_stack, expression, fim, i);
@@ -147,6 +150,15 @@ Stack * inverter(Stack *_stack_in, Stack *_stack_out) {
         _stack_in = pop(_stack_in);
     }
     return _stack_out;
+}
+
+Stack * somar(Stack *_stack0, Stack *_stack1) {
+    if(_stack0->ant == NULL) {
+        _stack0->ant = _stack1;
+    } else {
+        _stack0->ant = somar(_stack0->ant, _stack1);
+    }
+    return _stack0;
 }
 
 Stack * esvaziar(Stack *_stack) {
@@ -263,6 +275,51 @@ Stack * limparDelimitadoresRedundantes(Stack *_stack) {
     
 }
 
+Stack *transformarIndiceDaRaizEmPotencia(int i) {
+    Stack *new = NULL;
+    new = push(new, 0, '^');
+    new = push(new, 0, '(');
+    new = push(new, 1, '\0');
+    new = push(new, 0, '/');
+    new = push(new, i, '\0');
+    new = push(new, 0, ')');
+    new = inverter(new, NULL);
+    return new;
+}
+
+Stack * converterRaizEmPotencia(Stack *_stack) {
+    if(_stack != NULL) {
+        if(_stack->caractere == 'r') {
+            
+            _stack = pop(_stack);
+            if(_stack->caractere == '\0') {
+                Stack *ant = _stack->ant;
+                _stack->ant = NULL;
+                _stack = somar(_stack, transformarIndiceDaRaizEmPotencia(2));
+                _stack = somar(_stack, ant);
+            } else {
+                _stack = pop(_stack);
+                double indice = _stack->valor;
+                _stack = pop(_stack);
+                _stack = pop(_stack);
+                double radicando = _stack->valor;
+                _stack = pop(_stack);
+                _stack = pop(_stack);
+                
+                Stack *new = NULL;
+                new = push(new, radicando, '\0');
+                new = somar(new, transformarIndiceDaRaizEmPotencia(indice));
+                _stack = somar(new, _stack);
+            }
+            
+        } else {
+            _stack->ant = converterRaizEmPotencia(_stack->ant);
+        }
+    }
+    
+    return _stack;
+}
+
 Stack * setLock(Stack *_stack, short _l) {
     if(_stack != NULL) {
         _stack->lock=_l;
@@ -300,6 +357,7 @@ Stack * calcular(Stack *_stack) {
 
 double calcularResultado(Stack *_stack) {
     while(getStackSize(_stack) > 1) {
+        printStack(_stack);
         if(hasDelimitadorAberto(_stack)) {
             _stack=setLock(_stack, 1);
         } else if(hasExpOuSqrt(_stack)) {
@@ -343,6 +401,11 @@ int main(int size, char *args[]) {
     stackTopo = inverter(stackTopo, NULL);
     stackTopo = analisarDelimitadores(stackTopo, 0, 0);
     stackTopo = limparDelimitadoresRedundantes(stackTopo);
+    
+    
+    stackTopo = converterRaizEmPotencia(stackTopo);
+    
+    
     printResultado(stackTopo);
     bzero(stackTopo, sizeof(stackTopo));
     
