@@ -116,12 +116,13 @@ Stack * empilhar(Stack *_stack, char *expression, char *fim, int i) {
             _stack = push(_stack, 0, expression[i]);
             i++;
         } else {
-            printf("\nErro: caractere inválido na expressão.\nexpression[%d]='%c'\n\n", i, expression[i]);
+            printf("\nErro: caractere inválido na expressão.\nexpression[%d]='%c'\n", i, expression[i]);
             printf("Tamanho da pilha: %d\n\n", getStackSize(_stack));
             printf("Nó da pilha:\n");
             printNode(_stack);
             printf("Todos os elementos da pilha:\n");
             printStack(_stack);
+            printf("\n");
             exit(1);
         }
         _stack = empilhar(_stack, expression, fim, i);
@@ -225,8 +226,6 @@ double applyOperator(double operand1, char operator, double operand2) {
             }
         case '^':
             return pow(operand1, operand2);
-        case 'r':
-            return sqrt(operand1);
         default:
             printf("Erro: operador inválido.\n");
             exit(1);
