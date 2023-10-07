@@ -1,5 +1,5 @@
 /*
- ========================================================================================
+ ==================================================================================================
  Nome        : calculadora.c
  Autor       : Tiago Barreto dos Santos
  Email       : tiagonic@gmail.com
@@ -10,8 +10,11 @@
                Ele lida com operadores +, -, *, /, ^ (potência) e parênteses.
  Compilação  : gcc -o calculadora calculadora.c -lm
  Uso         : ./calculadora "[Expressão Matemática]"
- Exemplo     : ./calculadora "5 - 10 * (2 * (4 / (3 * 1 + 1)) / 2 - 7) / 60 + 6 ^ 2"
- =========================================================================================
+ Exemplo     : ./calculadora "5 - 10 * (2 * (4 / (3 * 1 + 1)) / 2 - 7) / 60 + 6 ^ 2 - r(3, 8)"
+               Nesse exemplo, é calculada a raiz cúbica de 8.
+               O padrão r(x,y)=z permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.
+               Nesse padrão r(x,y)=z, 'r' é o radical, 'x' é o índice, 'y' o radicando e 'z' a raiz.
+ ==================================================================================================
  */
 
 #include <stdio.h>
@@ -357,7 +360,7 @@ Stack * calcular(Stack *_stack) {
 
 double calcularResultado(Stack *_stack) {
     while(getStackSize(_stack) > 1) {
-        printStack(_stack);
+        //printStack(_stack);
         if(hasDelimitadorAberto(_stack)) {
             _stack=setLock(_stack, 1);
         } else if(hasExpOuSqrt(_stack)) {
@@ -372,7 +375,7 @@ double calcularResultado(Stack *_stack) {
 }
 
 void printResultado(Stack *_stack) {
-    printf("%f\n", calcularResultado(_stack));
+    printf("%.2f\n", calcularResultado(_stack));
 }
 
 int main(int size, char *args[]) {
@@ -401,11 +404,7 @@ int main(int size, char *args[]) {
     stackTopo = inverter(stackTopo, NULL);
     stackTopo = analisarDelimitadores(stackTopo, 0, 0);
     stackTopo = limparDelimitadoresRedundantes(stackTopo);
-    
-    
     stackTopo = converterRaizEmPotencia(stackTopo);
-    
-    
     printResultado(stackTopo);
     bzero(stackTopo, sizeof(stackTopo));
     
