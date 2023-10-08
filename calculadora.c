@@ -22,6 +22,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <unistd.h>
+
+char *expression = NULL;
+char *outputFile = NULL;
+char *inputFile = NULL;
+int verbose = 0;
+int roundResult = 0;
 
 typedef struct Stack {
     double valor;
@@ -52,7 +59,15 @@ void printStack(Stack *_stack) {
         if(_stack->caractere!='\0') {
             printf("%c", _stack->caractere);
         } else {
-            printf("%f", _stack->valor);
+            int casasDecimais = 6;
+            double valor = _stack->valor;
+            if (fmod(valor, 1.0) == 0.0) {
+                valor = round(_stack->valor);
+                casasDecimais = 0;
+            } else if(roundResult) {
+                casasDecimais = 2;
+            }
+            printf("%.*lf", casasDecimais, valor);
         }
         printStack(_stack->ant);
     } else {
@@ -359,7 +374,9 @@ Stack * calcular(Stack *_stack) {
 
 double calcularResultado(Stack *_stack) {
     while(getStackSize(_stack) > 1) {
-        //printStack(_stack);
+        if(verbose){
+            printStack(_stack);
+        }
         if(hasDelimitadorAberto(_stack)) {
             _stack=setLock(_stack, 1);
         } else if(hasExpOuSqrt(_stack)) {
@@ -374,38 +391,99 @@ double calcularResultado(Stack *_stack) {
 }
 
 void printResultado(Stack *_stack) {
-    printf("%.2f\n", calcularResultado(_stack));
+    double resultado = calcularResultado(_stack);
+    int casasDecimais = 6; // Define o número de casas decimais a serem mostradas
+    if (fmod(resultado, 1.0) == 0.0) {
+        resultado = round(resultado);
+        casasDecimais = 0;
+    } else if(roundResult) {
+        casasDecimais = 2;
+    }
+    printf("%.*lf\n",casasDecimais, resultado);
 }
 
-int main(int size, char *args[]) {
-    char expression[1024];
-    bzero(expression, sizeof(expression));
-    
-    int i = 1;
-    while(size > 1) {
-        for(int j = 0; j < strlen(args[i]); j++) {
-            expression[strlen(expression)] = args[i][j];
-        }
-        size--;
-        i++;
-    }
-    
-    i=0;
-    for(int j = 0; j < strlen(expression); j++) {
-        if(expression[j] != ' ') {
-            expression[i++] = expression[j];
+char *removerEspacos(char *str) {
+    int i, j = 0;
+    for (i = 0; str[i] != '\0'; i++) {
+        if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n' && str[i] != '\r') {
+            str[j++] = str[i];
         }
     }
-    expression[i]='\0';
+    str[j] = '\0';
+    return str;
+}
+
+int main(int argc, char *argv[]) {
+    expression = NULL;
+    outputFile = NULL;
+    inputFile = NULL;
+    verbose = 0;
+    roundResult = 0;
     
-    stackTopo = NULL;
-    stackTopo = empilhar(stackTopo, expression, 0, 0);
-    stackTopo = inverter(stackTopo, NULL);
-    stackTopo = analisarDelimitadores(stackTopo, 0, 0);
-    stackTopo = limparDelimitadoresRedundantes(stackTopo);
-    stackTopo = converterRaizEmPotencia(stackTopo);
-    printResultado(stackTopo);
-    bzero(stackTopo, sizeof(stackTopo));
+    // Verifica se há argumentos suficientes na linha de comando
+    int opt;
+    if (argc > 1) {
+        while ((opt = getopt(argc, argv, "hsvf:o:")) != -1) {
+            switch (opt) {
+                case 'h':
+                    // Exibir ajuda
+                    printf("Entre com expressões numéricas utilizando os operadores: +, -, *, /, ^ e r.\n");
+                    printf("O operador 'r' utiliza o padrão r(x,y)=z e permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.\n");
+                    printf("Por exemplo, o cálculo da raiz quadrada de 4 e da raiz cúbica de 8 pode ser feito respectivamente da seguinte forma:\n");
+                    printf("\t%s r4 = 2\n\t%s \"r(3,8)\" = 2\n", argv[0], argv[0]);
+                    printf("Opções:\n");
+                    printf("\t-h: Ajuda\n");
+                    printf("\t-s: Saída com resultado arredondado\n");
+                    printf("\t-v: Saída detalhada (verbose)\n");
+                    printf("\t-f arquivo: Ler expressão a ser calculada de um arquivo\n");
+                    printf("\t-o arquivo: Escrever o resultado em um arquivo\n");
+                    exit(0);
+                    break;
+                case 's':
+                    // Ativar saída com resultado arredondado
+                    roundResult = 1;
+                    break;
+                case 'v':
+                    // Ativar saída detalhada (verbose)
+                    verbose = 1;
+                    break;
+                case 'f':
+                    // Ler expressão de um arquivo
+                    inputFile = optarg;
+                    break;
+                case 'o':
+                    // Definir arquivo de saída
+                    outputFile = optarg;
+                    break;
+                default:
+                    fprintf(stderr, "Opções válidas: %s [-hsv] [-f arquivo] [-o arquivo] [expressão]\n", argv[0]);
+                    exit(1);
+            }
+        } //fim do while
+        
+        if (optind < argc) {
+            // Se ainda houver argumentos na linha de comando após o processamento das opções,
+            // o último argumento é tratado como a expressão matemática.
+            expression = argv[optind];
+        }
+    }
+    
+    if(expression != NULL) {
+        if(strlen(expression)>1){
+            expression = removerEspacos(expression);
+            stackTopo = NULL;
+            stackTopo = empilhar(stackTopo, expression, 0, 0);
+            stackTopo = inverter(stackTopo, NULL);
+            stackTopo = analisarDelimitadores(stackTopo, 0, 0);
+            stackTopo = limparDelimitadoresRedundantes(stackTopo);
+            stackTopo = converterRaizEmPotencia(stackTopo);
+            printResultado(stackTopo);
+            bzero(stackTopo, sizeof(stackTopo));
+        }
+    } else if(inputFile == NULL) {
+        fprintf(stderr, "Erro: Nenhuma expressão matemática fornecida.\n");
+        exit(1);
+    }
     
     return 0;
 }
