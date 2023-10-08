@@ -338,7 +338,7 @@ Stack * calcular(Stack *_stack) {
     if(hasDelimitadorAberto(_stack)) {
         _stack->ant = calcular(_stack->ant);
         _stack = limparDelimitador(_stack);
-    } else if(isLock(_stack) != 1 && getStackSize(_stack) > 3 && hasExpOuSqrt(_stack) && (_stack->ant->caractere != '^' && _stack->ant->caractere != 'r')) {
+    } else if(isLock(_stack) != 1 && getStackSize(_stack) > 3 && hasExpOuSqrt(_stack) && _stack->ant->caractere != '^') {
         _stack->ant = calcular(_stack->ant);
     } else if(!isLock(_stack) && getStackSize(_stack) > 3 && hasMultOuDiv(_stack) && (_stack->ant->caractere != '*' && _stack->ant->caractere != '/')) {
         _stack->ant = calcular(_stack->ant);
