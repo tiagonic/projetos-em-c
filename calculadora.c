@@ -1,6 +1,7 @@
 /*
  ==================================================================================================
  Nome        : calculadora.c
+ Data        : 11 de outubro de 2023
  Autor       : Tiago Barreto dos Santos
  Email       : tiagonic@gmail.com
  Instagram   : @tiagonic
@@ -358,15 +359,14 @@ Stack * calcular(Stack *_stack) {
     } else if(!isLock(_stack) && getStackSize(_stack) > 3 && hasMultOuDiv(_stack) && (_stack->ant->caractere != '*' && _stack->ant->caractere != '/')) {
         _stack->ant = calcular(_stack->ant);
     } else {
-        double v1, v2, d;
+        double v1, v2;
         char op;
         v1 = _stack->valor;
         _stack = pop(_stack);
         op = _stack->caractere;
         _stack = pop(_stack);
         v2 = _stack->valor;
-        d = applyOperator(v1, op, v2);
-        _stack->valor = d;
+        _stack->valor = applyOperator(v1, op, v2);
         _stack->caractere = '\0';
     }
     return _stack;
@@ -410,6 +410,50 @@ char *removerEspacos(char *str) {
         }
     }
     str[j] = '\0';
+    return str;
+}
+
+char *converteVirgulaEmPonto(char *str) {
+    for (int i = 0; i < strlen(str); i++) {
+        if (str[i] == ','){
+            str[i] = '.';
+        }
+    }
+    return str;
+}
+
+short hasMaisQueUmPonto(char *str) {
+    short c = -1;
+    for (short i = 0; i < strlen(str); i++) {
+        if (str[i] == '.'){
+            c++;
+        }
+    }
+    if(c < 0) {
+        c = 0;
+    }
+    return c;
+}
+
+char *retiraUmPonto(char *str, int i) {
+    if(hasMaisQueUmPonto(str)){
+        if (str[i] == '.') {
+            int j = i;
+            while(j < strlen(str)) {
+                str[j] = str[(j+1)];
+                j++;
+            }
+        } else if (str[i] != '\0') {
+            str = retiraUmPonto(str, ++i);
+        }
+    }
+    return str;
+}
+
+char *verificarSeTemMaisQueUmPonto(char *str) {
+    while(hasMaisQueUmPonto(str)) {
+        str = retiraUmPonto(str, 0);
+    }
     return str;
 }
 
@@ -471,12 +515,16 @@ int main(int argc, char *argv[]) {
     if(expression != NULL) {
         if(strlen(expression)>1){
             expression = removerEspacos(expression);
+            expression = converteVirgulaEmPonto(expression);
+            expression = verificarSeTemMaisQueUmPonto(expression);
+            
             stackTopo = NULL;
             stackTopo = empilhar(stackTopo, expression, 0, 0);
             stackTopo = inverter(stackTopo, NULL);
             stackTopo = analisarDelimitadores(stackTopo, 0, 0);
             stackTopo = limparDelimitadoresRedundantes(stackTopo);
             stackTopo = converterRaizEmPotencia(stackTopo);
+            
             printResultado(stackTopo);
             bzero(stackTopo, sizeof(stackTopo));
         }
