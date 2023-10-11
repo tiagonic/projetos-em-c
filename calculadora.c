@@ -11,10 +11,10 @@
                Ele lida com operadores +, -, *, /, ^ (potência) e parênteses.
  Compilação  : gcc -o calculadora calculadora.c -lm
  Uso         : ./calculadora "[Expressão Matemática]"
- Exemplo     : ./calculadora "5 - 10 * (2 * (4 / (3 * 1 + 1)) / 2 - 7) / 60 + 6 ^ 2 - r(3, 8)"
+ Exemplo     : ./calculadora "5 - 10 * (2 * (4 / (3 * 1 + 1)) / 2 - 7) / 60 + 6 ^ 2 - r(3;8)"
                Nesse exemplo, é calculada a raiz cúbica de 8.
-               O padrão r(x,y)=z permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.
-               Nesse padrão r(x,y)=z, 'r' é o radical, 'x' é o índice, 'y' o radicando e 'z' a raiz.
+               O padrão r(x;y)=z permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.
+               Nesse padrão r(x;y)=z, 'r' é o radical, 'x' é o índice, 'y' o radicando e 'z' a raiz.
  ==================================================================================================
  */
 
@@ -115,11 +115,11 @@ Stack * pop(Stack *_stack) {
 }
 
 int isOperator(char c) {
-    return (c == '+' || c == '-' || c == '*' || c == '/' || c == '^'|| c == 'r');
+    return (c == '+' || c == '-' || c == '*' || c == '/' || c == '^'|| c == 'r' || c == '%');
 }
 
 int isDelimiter(char c) {
-    return (c == '(' || c == ',' || c == ')');
+    return (c == '(' || c == ',' || c == ')' || c == ';');
 }
 
 Stack * empilhar(Stack *_stack, char *expression, char *fim, int i) {
@@ -472,9 +472,9 @@ int main(int argc, char *argv[]) {
                 case 'h':
                     // Exibir ajuda
                     printf("Entre com expressões numéricas utilizando os operadores: +, -, *, /, ^ e r.\n");
-                    printf("O operador 'r' utiliza o padrão r(x,y)=z e permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.\n");
+                    printf("O operador 'r' utiliza o padrão r(x;y)=z e permite calcular a raiz x de qualquer número com a fórmula z=y^1/x.\n");
                     printf("Por exemplo, o cálculo da raiz quadrada de 4 e da raiz cúbica de 8 pode ser feito respectivamente da seguinte forma:\n");
-                    printf("\t%s r4 = 2\n\t%s \"r(3,8)\" = 2\n", argv[0], argv[0]);
+                    printf("\t%s r4 = 2\n\t%s \"r(3;8)\" = 2\n", argv[0], argv[0]);
                     printf("Opções:\n");
                     printf("\t-h: Ajuda\n");
                     printf("\t-s: Saída com resultado arredondado\n");
@@ -513,10 +513,12 @@ int main(int argc, char *argv[]) {
     }
     
     if(expression != NULL) {
-        if(strlen(expression)>1){
+        if(strlen(expression)>0){
             expression = removerEspacos(expression);
             expression = converteVirgulaEmPonto(expression);
             expression = verificarSeTemMaisQueUmPonto(expression);
+            
+            //printf("expression=%s\n", expression);
             
             stackTopo = NULL;
             stackTopo = empilhar(stackTopo, expression, 0, 0);
@@ -524,6 +526,8 @@ int main(int argc, char *argv[]) {
             stackTopo = analisarDelimitadores(stackTopo, 0, 0);
             stackTopo = limparDelimitadoresRedundantes(stackTopo);
             stackTopo = converterRaizEmPotencia(stackTopo);
+            
+            //printStack(stackTopo);
             
             printResultado(stackTopo);
             bzero(stackTopo, sizeof(stackTopo));
