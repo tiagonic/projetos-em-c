@@ -293,15 +293,10 @@ Stack * limparDelimitadoresRedundantes(Stack *_stack) {
     
 }
 
-Stack *transformarIndiceDaRaizEmPotencia(int i) {
+Stack *addIndice(double i) {
     Stack *new = NULL;
-    new = push(new, 0, '^');
-    new = push(new, 0, '(');
-    new = push(new, 1, '\0');
-    new = push(new, 0, '/');
     new = push(new, i, '\0');
-    new = push(new, 0, ')');
-    new = inverter(new, NULL);
+    new = push(new, 0, '^');
     return new;
 }
 
@@ -313,11 +308,12 @@ Stack * converterRaizEmPotencia(Stack *_stack) {
             if(_stack->caractere == '\0') {
                 Stack *ant = _stack->ant;
                 _stack->ant = NULL;
-                _stack = somar(_stack, transformarIndiceDaRaizEmPotencia(2));
+                double indice = applyOperator(1, '/', 2);
+                _stack = somar(_stack, addIndice(0.5));
                 _stack = somar(_stack, ant);
             } else {
                 _stack = pop(_stack);
-                double indice = _stack->valor;
+                double indice = applyOperator(1, '/', _stack->valor);
                 _stack = pop(_stack);
                 _stack = pop(_stack);
                 double radicando = _stack->valor;
@@ -326,7 +322,7 @@ Stack * converterRaizEmPotencia(Stack *_stack) {
                 
                 Stack *new = NULL;
                 new = push(new, radicando, '\0');
-                new = somar(new, transformarIndiceDaRaizEmPotencia(indice));
+                new = somar(new, addIndice(indice));
                 _stack = somar(new, _stack);
             }
             
@@ -422,37 +418,44 @@ char *converteVirgulaEmPonto(char *str) {
     return str;
 }
 
-short hasMaisQueUmPonto(char *str) {
+short hasMaisQueUmPonto(char *str, int i) {
     short c = -1;
-    for (short i = 0; i < strlen(str); i++) {
+    while (i < strlen(str) && !isOperator(str[i])){
         if (str[i] == '.'){
             c++;
         }
+        i++;
     }
+    
     if(c < 0) {
         c = 0;
     }
+    
     return c;
 }
 
-char *retiraUmPonto(char *str, int i) {
-    if(hasMaisQueUmPonto(str)){
-        if (str[i] == '.') {
-            int j = i;
-            while(j < strlen(str)) {
-                str[j] = str[(j+1)];
-                j++;
-            }
-        } else if (str[i] != '\0') {
-            str = retiraUmPonto(str, ++i);
-        }
+int getIndexNextOperator(char *str, int i) {
+    if(isOperator(str[i]) || str[(i+1)]=='\0') {
+        return i;
+    } else {
+        return getIndexNextOperator(str, ++i);
     }
-    return str;
 }
 
-char *verificarSeTemMaisQueUmPonto(char *str) {
-    while(hasMaisQueUmPonto(str)) {
-        str = retiraUmPonto(str, 0);
+char *verificarSeTemMaisQueUmPonto(char *str, int i) {
+    if (str[i] != '\0') {
+        if (str[i] == '.') {
+            if(hasMaisQueUmPonto(str, i)) {
+                int j = i;
+                while(j < strlen(str)) {
+                    str[j] = str[(j+1)];
+                    j++;
+                }
+            } else {
+                i = getIndexNextOperator(str, i);
+            }
+        }
+        str = verificarSeTemMaisQueUmPonto(str, ++i);
     }
     return str;
 }
@@ -516,10 +519,7 @@ int main(int argc, char *argv[]) {
         if(strlen(expression)>0){
             expression = removerEspacos(expression);
             expression = converteVirgulaEmPonto(expression);
-            expression = verificarSeTemMaisQueUmPonto(expression);
-            
-            //printf("expression=%s\n", expression);
-            
+            expression = verificarSeTemMaisQueUmPonto(expression, 0);
             stackTopo = NULL;
             stackTopo = empilhar(stackTopo, expression, 0, 0);
             stackTopo = inverter(stackTopo, NULL);
